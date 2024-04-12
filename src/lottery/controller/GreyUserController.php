@@ -130,8 +130,8 @@ class GreyUserController extends Controller
             $ip = $request->ip();
             // 加锁，开始执行抽奖操作
             $lock_name = LotteryService::LOCK_LOTTERY_KEY . '_' . $round_id . '_' . $room_num;
-            $lock = LockService::instance()->lock(LotteryService::LOCK_LOTTERY_APP, $lock_name, LotteryService::LOCK_LOTTERY_TIME, $ip);
-            if ($lock['code'] != 0) {
+            $lock = LockService::instance()->lock(LotteryService::LOCK_LOTTERY_APP, $lock_name, $ip, LotteryService::LOCK_LOTTERY_APP, LotteryService::LOCK_LOTTERY_TIME);
+            if ($lock['code'] != 1) {
                 Logger::instance()->channel()->error("Act grey lottery lock faild. round_id: {$round_id}, room_num: {$room_num}, code: {$lock['code']}, msg: {$lock['msg']}");
                 return $this->error($lock['msg']);
             }
@@ -146,7 +146,7 @@ class GreyUserController extends Controller
             } finally {
                 // 释放锁
                 $unlock = LockService::instance()->unLock($lock['data']);
-                if ($unlock['code'] != 0) {
+                if ($unlock['code'] != 1) {
                     Logger::instance()->channel()->error("Act lottery unlock faild. round_id: {$round_id}, room_num: {$room_num}, code: {$unlock['code']}, msg: {$unlock['msg']}");
                     return $this->error($unlock['msg']);
                 }

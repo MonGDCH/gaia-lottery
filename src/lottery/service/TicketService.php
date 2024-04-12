@@ -8,7 +8,7 @@ use Throwable;
 use mon\log\Logger;
 use think\facade\Db;
 use mon\util\Instance;
-use app\admin\dao\AdminLogDao;
+use plugins\admin\dao\AdminLogDao;
 use plugins\lottery\contract\LogEnum;
 use plugins\lottery\dao\UserTicketDao;
 use plugins\lottery\contract\TicketEnum;

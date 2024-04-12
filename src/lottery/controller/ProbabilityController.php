@@ -46,14 +46,17 @@ class ProbabilityController extends Controller
             $result = ProbabilityDao::instance()->getList($options);
             // 是否有效
             $effect = ($roundInfo['status'] != RoundEnum::ROUND_STATUS['draft'] && $roundInfo['status'] != RoundEnum::ROUND_STATUS['downline']) ? 1 : 0;
-            // 已中奖数
+            // 剩余奖品数
             $isWinCount = ProbabilityDao::instance()->where('round_id', $round_id)->where('is_win', 1)->where('is_use', RoundEnum::PROBABILITY_USE_STATUS['enable'])->count();
             // 已抽奖数
             $isUseCount = ProbabilityDao::instance()->where('round_id', $round_id)->where('is_use', 1)->count();
+            // 奖品总数
+            $giftCount = ProbabilityDao::instance()->where('round_id', $round_id)->where('is_win', 1)->count();
             return $this->success('ok', $result['list'], [
                 'count' => $result['count'],
                 'effect' => $effect,
                 'totalRow' => [
+                    'giftCount' => $giftCount,
                     'isWinCount' => $isWinCount,
                     'isUseCount' => $isUseCount
                 ]

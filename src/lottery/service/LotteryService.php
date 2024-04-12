@@ -391,7 +391,7 @@ class LotteryService
             // 获取场次奖品
             $minGift = $award;
             shuffle($minGift);
-            $awardList = Common::instance()->rand_num_arr($min, $max - 1, $awardCount);
+            $awardList = Common::instance()->randomNumberForArray($min, $max - 1, $awardCount);
             for ($j = 0; $j < $quency; $j++) {
                 $k = $min + $j;
                 // 奖品ID
@@ -433,7 +433,7 @@ class LotteryService
             // 允许覆盖奖项
             if ($allCover) {
                 // 全号码覆盖
-                $max_award_list = Common::instance()->rand_num_arr(0, $max_quency - 1, count($max_award));
+                $max_award_list = Common::instance()->randomNumberForArray(0, $max_quency - 1, count($max_award));
                 foreach ($max_award_list as $k => $v) {
                     $probability[$v]['is_win'] = RoundEnum::PROBABILITY_WIN_STATUS['enable'];
                     $probability[$v]['probability_gift_id'] = $maxGift[$k];
@@ -449,7 +449,7 @@ class LotteryService
                         $k = $not_win_list[$i];
                     } else {
                         // 未中奖号码不足，从已中奖号码中覆盖
-                        $key = Common::instance()->rand_num_arr(0, $max_quency - 1, 1, $max_win_list_cache);
+                        $key = Common::instance()->randomNumberForArray(0, $max_quency - 1, 1, $max_win_list_cache);
                         $k = $key[0];
                         $max_win_list_cache[] = $k;
                     }

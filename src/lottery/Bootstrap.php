@@ -21,7 +21,7 @@ class Bootstrap implements PluginInterface
      */
     public static function enable(): bool
     {
-        return defined('IN_FPM');
+        return true;
     }
 
     /**

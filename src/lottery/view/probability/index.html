@@ -57,9 +57,9 @@
                         return `<a lay-on="user-tips" class="mon-link" data-mobile="${d.u_mobile}" data-email="${d.u_email}" data-uid="${d.lottery_uid}">${d.u_nickname}</a>`
                     }
                 },
-                { field: 'lottery_time', title: '抽奖时间', width: 160, align: 'center', sort: true, templet: d => mTable.format.dateTime(d.lottery_time), totalRow: '已中奖数：{{d.TOTAL_ROW.isWinCount}}' },
+                { field: 'lottery_time', title: '抽奖时间', width: 160, align: 'center', sort: true, templet: d => mTable.format.dateTime(d.lottery_time), totalRow: '剩余奖品数：{{d.TOTAL_ROW.isWinCount}}' },
                 {
-                    field: 'g_title', title: '中奖奖品', minWidth: 200, templet: (d) => {
+                    field: 'g_title', title: '中奖奖品', minWidth: 200, totalRow: '奖品总数：{{d.TOTAL_ROW.giftCount}}', templet: (d) => {
                         if (d.probability_gift_id == 0) {
                             return ''
                         }
