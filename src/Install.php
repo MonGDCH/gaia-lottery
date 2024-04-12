@@ -32,7 +32,7 @@ class Install
      * @var array
      */
     protected static $dir_relation = [
-        'cms' => 'plugins/cms',
+        'lottery' => 'plugins/lottery',
     ];
 
     /**
@@ -42,7 +42,7 @@ class Install
      */
     public static function install()
     {
-        echo 'Gaia-CMS installation successful, please execute `php gaia vendor:publish gaia\cms`' . PHP_EOL;
+        echo 'Gaia-lottery installation successful, please execute `php gaia vendor:publish gaia\lottery`' . PHP_EOL;
     }
 
     /**
@@ -52,7 +52,7 @@ class Install
      */
     public static function update()
     {
-        echo 'Gaia-CMS upgrade successful, please execute `php gaia vendor:publish gaia\cms`' . PHP_EOL;
+        echo 'Gaia-lottery upgrade successful, please execute `php gaia vendor:publish gaia\lottery`' . PHP_EOL;
     }
 
     /**
