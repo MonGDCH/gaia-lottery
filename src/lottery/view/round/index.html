@@ -1,0 +1,197 @@
+<?php $this->layout('page'); ?>
+
+
+<!-- 搜索 -->
+<div class="search-panel" id="search-form">
+    <form class="layui-form" lay-filter="search">
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="title" placeholder="搜索名称" class="layui-input" autocomplete="off">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">使用奖卷</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('tid', $ticketList)?>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动状态</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('status', $status, [], [], true, true)?>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="lottery_time" placeholder="搜索活动时间" class="layui-input date-range"
+                    autocomplete="off">
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<div class="layui-card">
+    <div class="layui-card-body m-card-body">
+        <!-- 表格 -->
+        <table id="table" lay-filter="table"></table>
+    </div>
+</div>
+
+<!-- 表格操作栏 -->
+<script type="text/html" id="toolbar">
+    <?= $this->build_toolbar('/lottery/round', $uid, ['add', 'search', 'reset']); ?>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operate">
+    <div class="oper-btns">
+        <?php if($this->checkAuth('/lottery/round/gift', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-primary layui-btn-xs" lay-event="gift">活动奖品</button>
+        <?php endif; ?>
+        <?php if($this->checkAuth('/lottery/round/probability', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-primary layui-btn-xs" lay-event="probability">活动奖池</button>
+        <?php endif; ?>
+        <button type="button" class="layui-btn layui-btn-xs" lay-event="more">更多操作 <i class="layui-icon layui-icon-down"></i></button>
+    </div>
+</script>
+
+
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['util', 'http', 'mTable', 'mForm', 'action'], function () {
+        const util = layui.util
+        const http = layui.http
+        const mForm = layui.mForm
+        const mTable = layui.mTable
+        const action = layui.action
+        const statusAttr = JSON.parse('<?=$statusAttr?>')
+        const statusAttrTitle = JSON.parse('<?=$statusAttrTitle?>')
+
+        // 渲染搜索表单
+        mForm.render()
+        // 渲染表格
+        mTable.render({
+            elem: '#table',
+            url: "<?=$this->url('/lottery/round')?>" + '?isApi=1',
+            cols: [[
+                { field: 'id', title: 'ID', width: 80, align: 'center' },
+                { field: 'img', title: '封面图片', width: 90, align: 'center', templet: d => mTable.format.image(d.img) },
+                { field: 'title', title: '活动名称', minWidth: 140 },
+                { field: 'tid', title: '使用奖卷', width: 140, align: 'center', templet: d => `<a lay-on="ticket-tips" class="mon-link" data-code="${d.t_code}" data-tid="${d.tid}">${d.t_name}</a>` },
+                { field: 'room_num', title: '抽奖房间数', width: 100, align: 'center' },
+                { field: 'room_quency', title: '房间抽奖数', width: 100, align: 'center' },
+                { field: 'status', title: '状态', width: 100, align: 'center', templet: d => statusAttrTitle[d.status] || '未知类型' },
+                { field: 'start_time', title: '开始时间', width: 160, align: 'center', templet: function (d) { return mTable.format.dateTime(d.start_time) }, sort: true },
+                { field: 'end_time', title: '结束时间', width: 160, align: 'center', templet: function (d) { return mTable.format.dateTime(d.end_time) }, sort: true },
+                // { field: 'remark', title: '规则描述', minWidth: 240 },
+                { field: 'sort', title: '权重', width: 80, align: 'center', sort: true },
+                { field: 'update_time', title: '编辑时间', width: 160, align: 'center', templet: function (d) { return mTable.format.dateTime(d.update_time) }, sort: true },
+                { field: 'operate', title: '操作', templet: '#operate', minWidth: 260, fixed: 'right' }
+            ]]
+        })
+        // 绑定表格事件
+        mTable.bindEvent('table', {
+            // toolbar事件
+            toolbar: {
+                // 新增
+                add: {
+                    url: "<?=$this->url('/lottery/round/add')?>",
+                    title: '创建活动',
+                },
+                // 搜索
+                search: function (data) {
+                    if (data.lottery_time) {
+                        let iLottery_time = data.lottery_time.split(' - ')
+                        data.start_time = Math.ceil((new Date(iLottery_time[0] + ' 00:00:00')).getTime() / 1000)
+                        data.end_time = Math.ceil((new Date(iLottery_time[1] + ' 23:59:59')).getTime() / 1000)
+                    }
+
+                    return data
+                },
+            },
+            // tool事件
+            tool: {
+                // 活动奖品
+                gift: function (data) {
+                    let url = "<?=$this->url('/lottery/round/gift')?>" + '?round_id=' + data.id
+                    action.drawer(url, `【${data.title}】活动奖品`, {
+                        end: function () {
+                            mTable.reloadData('table')
+                        }
+                    })
+                },
+                // 活动奖池
+                probability: function (data) {
+                    let url = "<?=$this->url('/lottery/round/probability')?>" + '?round_id=' + data.id
+                    action.drawer(url, `【${data.title}】活动奖池`, {
+                        end: function () {
+                            mTable.reloadData('table')
+                        }
+                    })
+                },
+                // 更多操作
+                more: function (obj) {
+                    const rowData = obj.data
+                    const moreMenuList = [];
+                    const editAuth = "<?=$this->checkAuth('/lottery/round/edit', $uid) ? 1 : 0?>"
+                    const publishAuth = "<?=$this->checkAuth('/lottery/round/publish', $uid) ? 1 : 0?>"
+                    const downlineAuth = "<?=$this->checkAuth('/lottery/round/downline', $uid) ? 1 : 0?>"
+                    if (editAuth == '1' && rowData.status != statusAttr['publish']) {
+                        moreMenuList.push({
+                            title: '编辑活动',
+                            callback: (data, table) => {
+                                let url = "<?=$this->url('/lottery/round/edit')?>" + '?idx=' + data.id
+                                action.drawer(url, `编辑活动`)
+                            },
+                        })
+                    }
+                    if (publishAuth == '1' && (rowData.status == statusAttr['effect'] || rowData.status == statusAttr['pre_publish'])) {
+                        moreMenuList.push({
+                            title: '发布活动',
+                            callback: (data, table) => {
+                                let url = "<?=$this->url('/lottery/round/publish')?>" + '?idx=' + data.id
+                                action.dialog(url, `发布活动【${data.title}】`)
+                            },
+                        })
+                    }
+                    if (downlineAuth == '1' && (rowData.status == statusAttr['publish'] || rowData.status == statusAttr['pre_publish'])) {
+                        moreMenuList.push({
+                            title: '活动下线',
+                            callback: (data, table) => {
+                                layer.confirm(`确认下线活动【${data.title}】么？`, { icon: 3, title: 'Tips' }, async (index) => {
+                                    layer.close(index);
+                                    let url = "<?=$this->url('/lottery/round/downline')?>"
+                                    const ret = await http.post(url, { round_id: data.id })
+                                    if (ret.code != '1') {
+                                        layer.msg(ret.msg, { icon: 2, time: 2000 })
+                                        return false;
+                                    }
+
+                                    // 刷新列表
+                                    layer.msg('下线成功', { icon: 1, time: 2000 })
+                                    mTable.reloadData('table')
+                                })
+                            },
+                        })
+
+                    }
+
+                    return moreMenuList;
+                }
+            },
+        })
+        // 详情查看
+        util.on('lay-on', {
+            'ticket-tips': function () {
+                let data = this.dataset
+                let tips = `凭证ID：${data.tid} <br/> 编 号：${data.code}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

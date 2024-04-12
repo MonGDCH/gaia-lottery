@@ -1,0 +1,120 @@
+<?php $this->layout('page'); ?>
+
+<!-- 搜索 -->
+<div class="search-panel" id="search-form">
+    <form class="layui-form" lay-filter="search">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户</label>
+            <div class="layui-input-block">
+                <div id="user-select"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态：</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('status', $status, [], [], true, true)?>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<div class="layui-card">
+    <div class="layui-card-body m-card-body">
+        <!-- 表格 -->
+        <table id="table" lay-filter="table"></table>
+    </div>
+</div>
+
+<!-- 表格操作栏 -->
+<script type="text/html" id="toolbar">
+    <?= $this->build_toolbar('/lottery/greyUser', $uid, ['add', 'search', 'reset']); ?>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operate">
+    <div class="oper-btns">
+        <?php if($this->checkAuth('/lottery/greyUser/edit', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">修改信息</button>
+        <?php endif; ?>
+        <?php if($this->checkAuth('/lottery/greyUser/drawLottery', $uid)): ?>
+        <!-- {{# if(d.status == '1'){ }} -->
+        <button type="button" class="layui-btn layui-btn-xs" lay-event="drawLottery">灰度抽奖</button>
+        <!-- {{# } }} -->
+        <?php endif; ?>
+    </div>
+</script>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['util', 'action', 'mTable', 'mForm', 'userSelect'], function () {
+        const util = layui.util
+        const action = layui.action
+        const mTable = layui.mTable
+        const mForm = layui.mForm
+        const userSelect = layui.userSelect
+
+        // 搜索用户
+        const searchUser = userSelect.render('#user-select', "<?=$this->url('/ucenter/getUser')?>")
+        // 渲染搜索表单
+        mForm.render()
+        // 渲染表格
+        mTable.render({
+            elem: '#table',
+            url: "<?=$this->url('/lottery/greyUser')?>?isApi=1",
+            cols: [[
+                { field: 'id', title: 'ID', width: 80, align: 'center' },
+                { field: 'nickname', title: '用户', width: 140, templet: d => `<a lay-on="user-tips" class="mon-link" data-mobile="${d.mobile}" data-email="${d.email}" data-uid="${d.uid}">${d.nickname}</a>` },
+                { field: 'start_time', title: '开始时间', width: 160, align: 'center', templet: function (d) { return mTable.format.dateTime(d.start_time) }, sort: true },
+                { field: 'end_time', title: '结束时间', width: 160, align: 'center', templet: function (d) { return mTable.format.dateTime(d.end_time) }, sort: true },
+                { field: 'status', title: '状态', width: 100, align: 'center', templet: function (d) { return mTable.format.status(d.status) } },
+                { field: 'update_time', title: '编辑时间', width: 168, align: 'center', templet: function (d) { return mTable.format.dateTime(d.update_time) }, sort: true },
+                { field: 'operate', title: '操作', templet: '#operate', minWidth: 200, fixed: 'right' }
+            ]]
+        })
+        // 绑定表格事件
+        mTable.bindEvent('table', {
+            // toolbar事件
+            toolbar: {
+                // 新增
+                add: {
+                    url: "<?=$this->url('/lottery/greyUser/add')?>",
+                    title: '新增灰度用户',
+                    dialog: true
+                },
+                // 搜索
+                search: function (data, reset) {
+                    // 重置
+                    if (reset) {
+                        searchUser.setValue([])
+                        return data
+                    }
+
+                    return data
+                },
+            },
+            // tool事件
+            tool: {
+                // 编辑
+                edit: {
+                    url: "<?=$this->url('/lottery/greyUser/edit')?>",
+                    title: '编辑灰度用户',
+                    dialog: true
+                },
+                // 灰度抽奖
+                drawLottery: function (data) {
+                    let url = "<?=$this->url('/lottery/greyUser/drawLottery')?>" + '?idx=' + data.id
+                    action.dialog(url, `灰度抽奖测试`)
+                }
+            },
+        })
+        util.on('lay-on', {
+            'user-tips': function () {
+                let data = this.dataset
+                let tips = `用户ID：${data.uid} <br/> 手机号：${data.mobile} <br/> 邮 箱：${data.email}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

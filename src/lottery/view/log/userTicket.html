@@ -1,0 +1,164 @@
+<?php $this->layout('page'); ?>
+
+<!-- 搜索 -->
+<div class="search-panel" id="search-form">
+    <form class="layui-form" lay-filter="search">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户</label>
+            <div class="layui-input-block">
+                <div id="user-select"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">来源</label>
+            <div class="layui-input-block">
+                <div id="from-select"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">抽奖卷</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('tid', $ticketList, [])?>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">类型</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('type', $typeAttr, [], [], true, true)?>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">操作时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="create_time" placeholder="搜索操作时间" class="layui-input date-range"
+                    autocomplete="off">
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<div class="layui-card">
+    <div class="layui-card-body m-card-body">
+        <!-- 表格 -->
+        <table id="table" lay-filter="table"></table>
+    </div>
+</div>
+
+<script type="text/html" id="toolbar">
+    <?=$this->build_toolbar('/lottery/log/userTicket', $uid, ['search', 'reset']); ?>
+</script>
+
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['util', 'http', 'mForm', 'mTable', 'common', 'userSelect'], function () {
+        const util = layui.util
+        const http = layui.http
+        const mForm = layui.mForm
+        const mTable = layui.mTable
+        const common = layui.common
+        const userSelect = layui.userSelect
+        const typeAttr = JSON.parse('<?=$typeAttrJson?>')
+
+        // 渲染搜索表单
+        mForm.render()
+        // 渲染表格
+        mTable.render({
+            elem: '#table',
+            url: "<?=$this->url('/lottery/log/userTicket')?>" + '?isApi=1',
+            cols: [[
+                { title: 'ID', field: 'id', width: 80, align: 'center' },
+                { title: '用户', field: 'uid', width: 160, align: 'center', templet: d => `<a lay-on="user-tips" class="mon-link" data-mobile="${d.u_mobile}" data-email="${d.u_email}" data-uid="${d.uid}">${d.u_nickname}</a>` },
+                { title: '抽奖卷', field: 'tid', width: 160, align: 'center', templet: d => `<a lay-on="ticket-tips" class="mon-link" data-code="${d.t_code}" data-tid="${d.tid}">${d.t_name}</a>` },
+                {
+                    title: '来源', field: 'from', width: 160, align: 'center', templet: (d) => {
+                        if (d.from == 0) {
+                            return '系统'
+                        }
+
+                        return `<a lay-on="from-tips" class="mon-link" data-mobile="${d.form_mobile}" data-email="${d.form_email}" data-uid="${d.from}">${d.form_nickname}</a>`
+                    }
+                },
+                { title: '类型', field: 'type', width: 120, align: 'center', templet: d => typeAttr[d.type] || '未知类型' },
+                { title: '操作前', field: 'before_count', width: 80, align: 'center' },
+                { title: '操作数', field: 'count', width: 80, align: 'center' },
+                { title: '操作后', field: 'after_count', width: 80, align: 'center' },
+                { title: '操作内容', field: 'remark', minWidth: 240, align: 'left' },
+                { title: '操作时间', field: 'create_time', width: 168, align: 'center', templet: d => common.date('Y-m-d H:i:s', d.create_time) },
+                { title: '关联ID', field: 'sid', width: 80, align: 'center' },
+            ]]
+        })
+        // 绑定表格事件
+        mTable.bindEvent('table', {
+            toolbar: {
+                // 搜索
+                search: function (data, reset) {
+                    // 重置
+                    if (reset) {
+                        searchUser.setValue([])
+                        searchFrom.setValue([])
+                        return data
+                    }
+                    // 搜索
+                    if (data.create_time) {
+                        let iCreate = data.create_time.split(' - ')
+                        data.start_time = common.strtotime(iCreate[0] + ' 00:00:00')
+                        data.end_time = common.strtotime(iCreate[1] + ' 23:59:59')
+                    }
+
+                    return data
+                },
+            }
+        })
+        // 详情查看
+        util.on('lay-on', {
+            'user-tips': function () {
+                let data = this.dataset
+                let tips = `用户ID：${data.uid} <br/> 手机号：${data.mobile} <br/> 邮 箱：${data.email}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            },
+            'from-tips': function () {
+                let data = this.dataset
+                let tips = `用户ID：${data.uid} <br/> 手机号：${data.mobile} <br/> 邮 箱：${data.email}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            },
+            'ticket-tips': function () {
+                let data = this.dataset
+                let tips = `凭证ID：${data.tid} <br/> 编 号：${data.code}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            }
+        })
+        // 搜索用户
+        const searchUser = userSelect.render('#user-select', "<?=$this->url('/ucenter/getUser')?>")
+        // 搜索来源
+        const searchFrom = userSelect.render('#from-select', "<?=$this->url('/ucenter/getUser')?>", {
+            name: 'from', remoteMethod: async (val, cb, show) => {
+                // 这里如果val为空, 默认返回系统
+                if (!val) { return cb([{ id: 0, nickname: '系统' }]); }
+                try {
+                    const { code, data, msg } = await http.ajax({
+                        url: "<?=$this->url('/ucenter/getUser')?>",
+                        method: 'GET',
+                        params: {
+                            page: 1,
+                            limit: 999,
+                            key: val
+                        }
+                    })
+                    if (code != '1') {
+                        cb([])
+                        return layer.msg(msg, { icon: 2 })
+                    }
+
+                    data.unshift({ id: 0, nickname: '系统' })
+                    cb(data)
+                } catch (err) {
+                    console.error(err)
+                    cb([]);
+                }
+            }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

@@ -1,0 +1,92 @@
+<?php $this->layout('page'); ?>
+<blockquote class="layui-elem-quote layui-bg-white">
+    注意：奖池生成会覆盖原有奖池，原有奖池将无效
+</blockquote>
+
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="" method="post">
+            <input type="hidden" name="round_id" value="<?=$roundInfo['id']?>">
+            <div class="layui-form-item">
+                <label class="layui-form-label">抽奖房间数</label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$roundInfo['room_num']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">房间抽奖数</label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$roundInfo['room_quency']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">可抽奖总数</label>
+                <div class="layui-input-inline">
+                    <div style="height: 38px; line-height: 38px; padding-left: 10px;">
+                        <?=$roundInfo['room_num'] * $roundInfo['room_quency']?> 次
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <?=$roundInfo['norm_title']?>数
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$roundInfo['norm_gift_count']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <?=$roundInfo['special_title']?>数
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$roundInfo['special_gift_count']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">奖品总数</label>
+                <div class="layui-input-inline">
+                    <div style="height: 38px; line-height: 38px; padding-left: 10px;">
+                        <?=($roundInfo['room_num'] * $roundInfo['norm_gift_count']) + $roundInfo['special_gift_count']?>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    覆盖奖项
+                </label>
+                <div class="layui-input-block">
+                    <?=$this->build_switch('cover', false, 1, ['是', '否'])?>
+
+                </div>
+                <div class="layui-font-13 layui-font-red">
+                    是否允许【
+                    <?=$roundInfo['special_title']?>】覆盖【
+                    <?=$roundInfo['norm_title']?>】，允许后可能会出现实际奖品总数少于设定总数。
+                </div>
+            </div>
+
+            <div class="layui-form-item layer-footer hidden">
+                <div class="layui-input-block text-left">
+                    <button class="layui-btn layui-btn-sm layui-btn-success" lay-submit
+                        lay-filter="submit">确认提交</button>
+                    <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['mForm'], function () {
+        const mForm = layui.mForm
+        // 渲染表单
+        mForm.render()
+        mForm.submit('submit', null, null, (form) => {
+            let cover = form.field.cover || 0
+            return { cover: cover }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

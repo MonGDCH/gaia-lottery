@@ -1,0 +1,112 @@
+<?php $this->layout('page'); ?>
+
+<blockquote class="layui-elem-quote" style="background-color: #fff">
+    注意：编辑后活动状态将转变为【草稿】状态
+</blockquote>
+
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="" method="post">
+            <input type="hidden" name="idx" value="<?=$data['id']?>">
+            <div class="layui-form-item">
+                <label class="layui-form-label">名称</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="title" lay-verify="required" lay-verType="tips" lay-reqText="请输入名称"
+                        placeholder="请输入名称，必填" class="layui-input" value="<?=$data['title']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">使用奖卷</label>
+                <div class="layui-input-block">
+                    <?=$this->build_select('tid', $ticketList, [$data['tid']], ['lay-search' => '', 'lay-verify'=> 'required', 'lay-verType' => 'tips', 'lay-reqText' => '请选择抽奖卷'])?>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">封面图片</label>
+                <div class="layui-input-group">
+                    <input type="text" name="img" placeholder="奖品图片，选填" id="img" class="layui-input"
+                        value="<?=$data['img']?>">
+                    <div class="layui-input-suffix">
+                        <button type="button" class="layui-btn layui-btn-primary" id="upload">选择图片</button>
+                        <button type="button" class="layui-btn layui-btn-primary" id="preview">预览</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">抽奖房间数</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="room_num" value="<?=$data['room_num']?>" step="1"
+                        min="0" lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">房间抽奖数</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="room_quency" value="<?=$data['room_quency']?>"
+                        step="1" min="0" lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">规则描述</label>
+                <div class="layui-input-block">
+                    <textarea name="content" class="layui-textarea" lay-verify="required" lay-reqText="请输入规则描述"
+                        lay-verType="tips" placeholder="请输入规则描述，必填"><?=$data['content']?></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">权重</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="sort" value="<?=$data['sort']?>" step="1" min="0"
+                        max="100" lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item layer-footer hidden">
+                <div class="layui-input-block text-left">
+                    <button class="layui-btn layui-btn-sm layui-btn-success" lay-submit
+                        lay-filter="submit">确认提交</button>
+                    <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['mForm', 'imgSelect',], function () {
+        const mForm = layui.mForm
+        const imgSelect = layui.imgSelect
+
+        // 渲染表单
+        mForm.render()
+        mForm.submit('submit')
+
+        // 图片选择
+        document.querySelector('#upload').addEventListener('click', () => {
+            imgSelect.show({
+                api: "<?=$this->url('/files')?>",
+                uploadURL: "<?=$this->url('/upload')?>",
+                callback: (data, index) => {
+                    document.querySelector('#img').value = data[0].url
+                }
+            })
+        })
+        // 图片预览
+        document.querySelector('#preview').addEventListener('click', () => {
+            let url = document.querySelector('#img').value
+            if (url) {
+                top.layer.photos({
+                    photos: {
+                        title: "图片预览",
+                        data: [{ alt: '', src: url }]
+                    },
+                    // 是否显示底部栏
+                    footer: true,
+                    shade: 0.75
+                });
+            }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

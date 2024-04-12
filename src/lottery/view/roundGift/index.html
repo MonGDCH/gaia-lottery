@@ -1,0 +1,113 @@
+<?php $this->layout('page'); ?>
+
+<div class="layui-card">
+    <div class="layui-card-body m-card-body">
+        <blockquote class="layui-elem-quote">
+            【 奖品等级说明】<br>
+            普通奖：以抽奖房间为维度随机分布，每个抽奖房间都会有独立的一份普通奖奖品<br>
+            特别奖：以活动为维度，所有抽奖房间会共享一份特别奖奖品<br>
+            总奖品数：(抽奖房间数 * 普通奖品总数) + 特别奖总数<br>
+            <span class="layui-font-red">注意：编辑后活动状态将转变为【草稿】状态</span>
+        </blockquote>
+        <!-- 表格 -->
+        <table id="table" lay-filter="table"></table>
+    </div>
+</div>
+
+<!-- 表格操作栏 -->
+<script type="text/html" id="toolbar">
+    <?= $this->build_toolbar('/lottery/round/gift', $uid, ['add']); ?>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operate">
+    <div class="oper-btns">
+        <?php if($this->checkAuth('/lottery/round/gift/edit', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">修改</button>
+        <?php endif; ?>
+        <?php if($this->checkAuth('/lottery/round/gift/remove', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-danger layui-btn-xs" data-idx="{{d.id}}" data-round_id="{{d.round_id}}" data-gift_id="{{d.gift_id}}" data-url="<?=$this->url('/lottery/round/gift/remove')?>" data-title="确认删除该奖品么？(不可逆)" lay-event="confirm">删除</button>
+        <?php endif; ?>
+    </div>
+</script>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['mTable'], function () {
+        const mTable = layui.mTable
+        const room_count = "<?=$roundInfo['room_num']?>"
+        const gift_type = JSON.parse('<?=$gift_type?>')
+        const win_level = JSON.parse('<?=$win_level?>')
+        const win_level_title = JSON.parse('<?=$win_level_title?>')
+
+        // 格式化奖品统计内容
+        function formatGiftTotal() {
+            return `${win_level_title[win_level['norm']]}：{{d.TOTAL_ROW.norm}}，${win_level_title[win_level['special']]}：{{d.TOTAL_ROW.special}}`
+        }
+        // 格式化获取中奖级别类型
+        function formatWinLevel(level) {
+            switch (level) {
+                case 2:
+                case '2':
+                    return `<span class="layui-font-purple">${win_level_title[level]}</span>`
+                default:
+                    return win_level_title[level] || '未知'
+            }
+        }
+
+        // 渲染表格
+        mTable.render({
+            elem: '#table',
+            url: "<?=$this->url('/lottery/round/gift')?>" + "?isApi=1&round_id=" + "<?=$roundInfo['id']?>",
+            totalRow: true,
+            page: false,
+            maxHeight: 580,
+            cols: [[
+                { field: 'id', title: 'ID', width: 80, align: 'center', totalRowText: '合计' },
+                { field: 'level', title: '等级', width: 90, align: 'center', sort: true, templet: d => formatWinLevel(d.level) },
+                { field: 'g_img', title: '奖品图片', width: 90, align: 'center', templet: d => mTable.format.image(d.g_img) },
+                { field: 'g_type', title: '奖品类型', width: 90, align: 'center', templet: d => gift_type[d.g_type] || '' },
+                { field: 'g_title', title: '奖品名称', minWidth: 200, totalRow: formatGiftTotal() },
+                { field: 'g_status', title: '奖品状态', width: 90, align: 'center', templet: function (d) { return mTable.format.status(d.g_status) } },
+                { field: 'count', title: '数量', width: 80, align: 'center', totalRow: `{{(d.TOTAL_ROW.norm * d.TOTAL_ROW.room_count) + d.TOTAL_ROW.special}}` },
+                { field: 'status', title: '状态', width: 80, align: 'center', templet: function (d) { return mTable.format.status(d.status) }, sort: true },
+                { field: 'operate', title: '操作', templet: '#operate', minWidth: 120, fixed: 'right' }
+            ]],
+            parseData: (result) => {
+                // 处理数据，得到合计的值
+                const totalRow = { norm: 0, special: 0, room_count: parseInt(room_count, 10) }
+                result.data.forEach(item => {
+                    if (item.level == win_level['norm']) {
+                        totalRow.norm += parseInt(item.count, 10)
+                    } else if (item.level == win_level['special']) {
+                        totalRow.special += parseInt(item.count, 10)
+                    }
+                })
+                result.totalRow = totalRow
+                return result
+            }
+        })
+        // 绑定表格事件
+        mTable.bindEvent('table', {
+            // toolbar事件
+            toolbar: {
+                // 新增
+                add: {
+                    url: "<?=$this->url('/lottery/round/gift/add')?>" + '?round_id=' + "<?=$roundInfo['id']?>",
+                    title: '新增奖品',
+                    dialog: true,
+                },
+            },
+            // tool事件
+            tool: {
+                // 编辑
+                edit: {
+                    url: "<?=$this->url('/lottery/round/gift/edit')?>",
+                    title: '编辑奖品',
+                    dialog: true,
+                }
+            },
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

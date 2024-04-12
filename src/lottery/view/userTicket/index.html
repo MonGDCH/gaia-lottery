@@ -1,0 +1,140 @@
+<?php $this->layout('page'); ?>
+
+<!-- 搜索 -->
+<div class="search-panel" id="search-form">
+    <form class="layui-form" lay-filter="search">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户</label>
+            <div class="layui-input-block">
+                <div id="user-select"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">抽奖卷</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('tid', $ticketList, [])?>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <?=$this->build_select('status', $status, [], [], true, true)?>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">编辑时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="update_time" placeholder="搜索编辑时间" class="layui-input date-range"
+                    autocomplete="off">
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<div class="layui-card">
+    <div class="layui-card-body m-card-body">
+        <!-- 表格 -->
+        <table id="table" lay-filter="table"></table>
+    </div>
+</div>
+
+<!-- 表格操作栏 -->
+<script type="text/html" id="toolbar">
+    <?= $this->build_toolbar('/lottery/userTicket', $uid, ['add', 'search', 'reset']); ?>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operate">
+    <div class="oper-btns">
+        <?php if($this->checkAuth('/lottery/userTicket/modify', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-primary layui-btn-xs" lay-event="modify">修改凭证数量</button>
+        <?php endif; ?>
+        <?php if($this->checkAuth('/lottery/userTicket/edit', $uid)): ?>
+        <button type="button" class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">修改信息</button>
+        <?php endif; ?>
+    </div>
+</script>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['util', 'mTable', 'mForm', 'common', 'action', 'userSelect'], function () {
+        const util = layui.util
+        const mTable = layui.mTable
+        const mForm = layui.mForm
+        const common = layui.common
+        const action = layui.action
+        const userSelect = layui.userSelect
+
+        // 搜索用户
+        const searchUser = userSelect.render('#user-select', "<?=$this->url('/ucenter/getUser')?>")
+        // 渲染搜索表单
+        mForm.render()
+        // 渲染表格
+        mTable.render({
+            elem: '#table',
+            url: "<?=$this->url('/lottery/userTicket')?>?isApi=1",
+            cols: [[
+                { field: 'id', title: 'ID', width: 80, align: 'center' },
+                { field: 'nickname', title: '用户', width: 120, templet: d => `<a lay-on="user-tips" class="mon-link" data-mobile="${d.mobile}" data-email="${d.email}" data-uid="${d.uid}">${d.nickname}</a>` },
+                { field: 'name', title: '奖卷名称', width: 120 },
+                { field: 'code', title: '奖卷编号', width: 120, align: 'center' },
+                { field: 'count', title: '奖卷数量', width: 100, align: 'center' },
+                { field: 'status', title: '状态', width: 100, align: 'center', templet: function (d) { return mTable.format.status(d.status) } },
+                { field: 'update_time', title: '编辑时间', width: 168, align: 'center', templet: function (d) { return mTable.format.dateTime(d.update_time) }, sort: true },
+                { field: 'create_time', title: '创建时间', width: 168, align: 'center', templet: function (d) { return mTable.format.dateTime(d.create_time) } },
+                { field: 'operate', title: '操作', templet: '#operate', minWidth: 200, fixed: 'right' }
+            ]],
+        })
+        // 绑定表格事件
+        mTable.bindEvent('table', {
+            // toolbar事件
+            toolbar: {
+                // 新增
+                add: {
+                    url: "<?=$this->url('/lottery/userTicket/add')?>",
+                    title: '新增凭证',
+                    dialog: true
+                },
+                // 搜索
+                search: function (data, reset) {
+                    // 重置
+                    if (reset) {
+                        searchUser.setValue([])
+                        return data
+                    }
+                    if (data.update_time) {
+                        let iupdate_time = data.update_time.split(' - ')
+                        data.start_time = common.strtotime(iupdate_time[0] + ' 00:00:00')
+                        data.end_time = common.strtotime(iupdate_time[1] + ' 23:59:59')
+                    }
+
+                    return data
+                },
+            },
+            // tool事件
+            tool: {
+                // 编辑
+                edit: {
+                    url: "<?=$this->url('/lottery/userTicket/edit')?>",
+                    title: '编辑凭证',
+                    dialog: true
+                },
+                // 修改数量
+                modify: function (data) {
+                    let url = "<?=$this->url('/lottery/userTicket/modify')?>" + '?idx=' + data.id
+                    action.dialog(url, `修改凭证数量`)
+                }
+            },
+        })
+
+        util.on('lay-on', {
+            'user-tips': function () {
+                let data = this.dataset
+                let tips = `用户ID：${data.uid} <br/> 手机号：${data.mobile} <br/> 邮 箱：${data.email}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

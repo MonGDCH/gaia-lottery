@@ -1,0 +1,104 @@
+<?php $this->layout('page'); ?>
+
+<div class="layui-card">
+    <div class="layui-card-body m-card-body">
+        <!-- 表格 -->
+        <table id="table" lay-filter="table"></table>
+    </div>
+</div>
+
+<!-- 表格操作栏 -->
+<script type="text/html" id="toolbar">
+    <?php if($this->checkAuth('/lottery/round/probability/build', $uid)): ?>
+    <button class="layui-btn layui-btn-sm layui-bg-blue" data-round="<?=$roundInfo['id']?>" lay-on="build">生成奖池</button>
+    <?php endif; ?>
+    <div class="layui-font-red hidden" id="err-tips" style="display: inline; margin-left: 10px;">注意：当前奖池已无效</div>
+</script>
+
+
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['util', 'http', 'action', 'mTable'], function () {
+        const util = layui.util
+        const http = layui.http
+        const action = layui.action
+        const mTable = layui.mTable
+        const giftType = JSON.parse('<?=$giftType?>')
+        const roundGiftType = JSON.parse('<?=$roundGiftType?>')
+
+        // 格式化获取中奖级别类型
+        function formatWinLevel(type) {
+            switch (type) {
+                case 2:
+                case '2':
+                    return `<span class="layui-font-purple">${roundGiftType[type]}</span>`
+                default:
+                    return roundGiftType[type] || '未知'
+            }
+        }
+
+        // 渲染表格
+        mTable.render({
+            elem: '#table',
+            url: "<?=$this->url('/lottery/round/probability')?>" + "?isApi=1&round_id=" + "<?=$roundInfo['id']?>",
+            totalRow: true,
+            cols: [[
+                { field: 'id', title: 'ID', width: 80, align: 'center', totalRow: '合计' },
+                { field: 'room', title: '房间号', width: 80, align: 'center' },
+                { field: 'is_win', title: '中奖', width: 80, align: 'center', sort: true, templet: d => mTable.format.statusIcon(d.is_win) },
+                { field: 'is_use', title: '已抽奖', width: 85, align: 'center', sort: true, templet: d => mTable.format.statusIcon(d.is_use), totalRow: '{{d.TOTAL_ROW.isUseCount}}' },
+                { field: 'win_level', title: '中奖等级', width: 100, align: 'center', sort: true, templet: d => d.is_win ? formatWinLevel(d.win_level) : '' },
+                {
+                    field: 'lottery_uid', title: '抽奖用户', width: 100, align: 'center', sort: true, templet: d => {
+                        if (d.lottery_uid == 0) {
+                            return ''
+                        }
+                        return `<a lay-on="user-tips" class="mon-link" data-mobile="${d.u_mobile}" data-email="${d.u_email}" data-uid="${d.lottery_uid}">${d.u_nickname}</a>`
+                    }
+                },
+                { field: 'lottery_time', title: '抽奖时间', width: 160, align: 'center', sort: true, templet: d => mTable.format.dateTime(d.lottery_time), totalRow: '已中奖数：{{d.TOTAL_ROW.isWinCount}}' },
+                {
+                    field: 'g_title', title: '中奖奖品', minWidth: 200, templet: (d) => {
+                        if (d.probability_gift_id == 0) {
+                            return ''
+                        }
+
+                        return `<a lay-on="gift-tips" class="mon-link" data-type="${d.g_type}" data-img="${d.g_img}" data-id="${d.g_gift_id}">${d.g_title}</a>`
+                    }
+                },
+            ]],
+            done: function (data) {
+                if (data.effect != 1) {
+                    document.querySelector('#err-tips').classList.remove('hidden')
+                } else {
+                    document.querySelector('#err-tips').classList.add('hidden')
+                }
+            }
+        })
+        mTable.bindEvent('table')
+
+        util.on('lay-on', {
+            // 用户详情
+            'user-tips': function () {
+                let data = this.dataset
+                let tips = `用户ID：${data.uid} <br/> 手机号：${data.mobile} <br/> 邮 箱：${data.email}`
+                layer.tips(tips, this, { tips: 1, time: 2000 })
+            },
+            // 奖品详情
+            'gift-tips': function (d) {
+                let data = this.dataset
+                const type = giftType[data.type] || ''
+                let tips = `奖品ID：${data.id}<br/>类 型：${type}<br/><img src="${data.img}" width="60" height="60" lay-on="img-preview" style="margin-top: 8px;">`
+                layer.tips(tips, this, { tips: 1, time: 2500 })
+            },
+            // 生成奖池
+            'build': function () {
+                const round_id = this.dataset.round || 0
+                const url = "<?=$this->url('/lottery/round/probability/build')?>" + '?round_id=' + round_id
+                action.dialog(url, '奖池生成')
+            }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

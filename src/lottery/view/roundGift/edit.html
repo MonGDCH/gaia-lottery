@@ -1,0 +1,131 @@
+<?php $this->layout('page'); ?>
+
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="" method="post">
+            <input type="hidden" name="idx" value="<?=$data['id']?>">
+            <input type="hidden" name="round_id" value="<?=$data['round_id']?>">
+            <div class="layui-form-item">
+                <label class="layui-form-label">奖品</label>
+                <div class="layui-input-block">
+                    <div id="gift-select"></div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">奖品等级</label>
+                <div class="layui-input-block">
+                    <?= $this->build_radios('level', $level, $data['level'], [], true); ?>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">数量</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="count" value="<?=$data['count']?>" step="1" min="0"
+                        lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">状态</label>
+                <div class="layui-input-block">
+                    <?= $this->build_radios('status', $status, $data['status'], [], true); ?>
+                </div>
+            </div>
+
+            <div class="layui-form-item layer-footer hidden">
+                <div class="layui-input-block text-left">
+                    <button class="layui-btn layui-btn-sm layui-btn-success" lay-submit
+                        lay-filter="submit">确认提交</button>
+                    <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['mForm', 'http', 'xmSelect'], function () {
+        const mForm = layui.mForm
+        const http = layui.http
+        const xmSelect = layui.xmSelect
+
+        // 渲染表单
+        mForm.render()
+        mForm.submit('submit')
+
+        xmSelect.render({
+            el: '#gift-select',
+            tips: '请搜索选择奖品',
+            searchTips: '输入奖品名称搜索',
+            name: 'gift_id',
+            layVerify: 'required',
+            layVerType: 'tips',
+            layReqText: '请选择奖品',
+            height: '420px',
+            filterable: true,
+            paging: true,
+            pageSize: 10,
+            radio: true,
+            clickClose: true,
+            data: JSON.parse('<?=$giftData?>'),
+            initValue: ["<?=$data['gift_id']?>"],
+            model: {
+                // 是否展示复选框或者单选框图标 show, hidden:变换背景色
+                icon: 'hidden',
+                label: {
+                    // 使用方式
+                    type: 'count',
+                    // 自定义渲染
+                    count: {
+                        // 函数处理
+                        template(data, sels) {
+                            return `${sels[0].title} 【${sels[0].type_name}】 #${sels[0].id}`
+                        }
+                    }
+                }
+            },
+            prop: {
+                name: 'title',
+                value: 'id',
+            },
+            template({ item, sels, name, value }) {
+                return item.title + '<span style="position: absolute; right: 0px; color: #8799a3">【' + item.type_name + '】</span>'
+            },
+            remoteSearch: true,
+            remoteMethod: async (val, cb, show) => {
+                // 这里如果val为空, 则不触发搜索
+                if (!val) {
+                    return cb([]);
+                }
+
+                try {
+                    const { code, data, msg } = await http.ajax({
+                        url: "<?=$this->url('/lottery/getGift')?>",
+                        method: 'GET',
+                        params: {
+                            page: 1,
+                            limit: 999,
+                            title: val,
+                            status: 1
+                        }
+                    })
+
+                    if (code != '1') {
+                        cb([])
+                        return layer.msg(msg, { icon: 2 })
+                    }
+
+                    cb(data)
+                } catch (err) {
+                    console.error(err)
+                    cb([]);
+                }
+            },
+        })
+
+    })
+</script>
+<?php $this->blockEnd(); ?>

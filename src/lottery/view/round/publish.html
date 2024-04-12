@@ -1,0 +1,105 @@
+<?php $this->layout('page'); ?>
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="" method="post">
+            <input type="hidden" name="idx" value="<?=$data['id']?>">
+            <div class="layui-form-item">
+                <label class="layui-form-label">活动时间</label>
+                <div class="layui-inline" id="round_time">
+                    <div class="layui-input-inline">
+                        <input type="text" name="start_time" id="start_time" class="layui-input" lay-verify="required"
+                            lay-reqText="请选择活动时间" lay-verType="tips" placeholder="活动开始时间">
+                    </div>
+                    <div class="layui-form-mid">-</div>
+                    <div class="layui-input-inline">
+                        <input type="text" name="end_time" id="end_time" class="layui-input" lay-verify="required"
+                            lay-reqText="请选择活动时间" lay-verType="tips" placeholder="活动结束时间">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">发布类型</label>
+                <div class="layui-input-block">
+                    <?= $this->build_radios('status', $statusList, key($statusList), [], true); ?>
+                </div>
+                <div class="layui-font-blue">【预发布】则为灰度发布，只有灰度用户才能参与。【正式发布】则所有人都能参与。</div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">抽奖房间数</label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$data['room_num']?>">
+                </div>
+                <label class="layui-form-label">房间抽奖数</label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$data['room_quency']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">可抽奖总数</label>
+                <div class="layui-input-inline">
+                    <div style="height: 38px; line-height: 38px; padding-left: 10px;">
+                        <?=$data['room_num'] * $data['room_quency']?> 次
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <?=$data['norm_title']?>数
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$data['norm_gift_count']?>">
+                </div>
+                <label class="layui-form-label">
+                    <?=$data['special_title']?>数
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" readonly class="layui-input" value="<?=$data['special_gift_count']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">奖品总数</label>
+                <div class="layui-input-inline">
+                    <div style="height: 38px; line-height: 38px; padding-left: 10px;">
+                        <?=($data['room_num'] * $data['norm_gift_count']) + $data['special_gift_count']?>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item layer-footer hidden">
+                <div class="layui-input-block text-left">
+                    <button class="layui-btn layui-btn-sm layui-btn-success" lay-submit
+                        lay-filter="submit">确认提交</button>
+                    <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['laydate', 'mForm'], function () {
+        const mForm = layui.mForm
+        const laydate = layui.laydate
+
+        // 活动时间
+        laydate.render({
+            elem: '#round_time',
+            type: 'datetime',
+            range: ['#start_time', '#end_time'],
+            rangeLinked: true,
+            format: 'yyyy-MM-dd HH:mm:ss',
+            calendar: true,
+        })
+        // 渲染表单
+        mForm.render()
+        mForm.submit('submit', null, null, (form) => {
+            let start_time = Math.ceil((new Date(form.field.start_time)).getTime() / 1000)
+            let end_time = Math.ceil((new Date(form.field.end_time)).getTime() / 1000)
+            return { start_time, end_time }
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>

@@ -1,0 +1,61 @@
+<?php $this->layout('page'); ?>
+
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="" method="post">
+            <input type="hidden" name="uid" value="<?=$data['uid']?>">
+            <input type="hidden" name="tid" value="<?=$data['tid']?>">
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" readonly value="<?=$data['nickname'] . ' #' . $data['id']?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">抽奖卷</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" readonly
+                        value="<?=$data['name'] . '（' . $data['code'] . '）'?>">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">当前数量</label>
+                <div class="layui-input-inline">
+                    <input type="number" readonly value="<?=$data['count']?>" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">操作方式</label>
+                <div class="layui-input-block">
+                    <?= $this->build_radios('type', ['1'=>'增加', '0'=>'减少'], 1, [], true); ?>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">操作数量</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="count" value="1" step="1" min="0"
+                        lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item layer-footer hidden">
+                <div class="layui-input-block text-left">
+                    <button class="layui-btn layui-btn-sm layui-btn-success" lay-submit
+                        lay-filter="submit">确认提交</button>
+                    <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['mForm'], function () {
+        const mForm = layui.mForm
+        // 渲染表单
+        mForm.render()
+        mForm.submit('submit')
+    })
+</script>
+<?php $this->blockEnd(); ?>

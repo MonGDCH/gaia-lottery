@@ -1,0 +1,96 @@
+<?php $this->layout('page'); ?>
+
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="" method="post">
+            <input type="hidden" name="idx" value="<?=$data['id']?>">
+            <div class="layui-form-item">
+                <label class="layui-form-label">抽奖活动</label>
+                <div class="layui-input-block">
+                    <?=$this->build_select('round_id', $rounds, [], ['lay-search' => '', 'lay-filter' => 'round', 'lay-verify'=> 'required', 'lay-verType' => 'tips', 'lay-reqText' => '请选择抽奖活动'])?>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">房间号</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="room_num" id="room_num" value="0" step="1" min="0"
+                        max="0" lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">抽奖次数</label>
+                <div class="layui-input-inline">
+                    <input type="number" lay-affix="number" name="step" value="1" step="1" min="1"
+                        lay-verify="required|int" lay-verType="tips" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item layer-footer hidden">
+                <button class="layui-btn layui-btn-sm layui-btn-success" lay-submit lay-filter="submit">确认提交</button>
+                <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php $this->block('js'); ?>
+<script>
+    layui.use(['mForm'], function () {
+        const mForm = layui.mForm
+        const roundInfo = JSON.parse('<?=$roundsJson?>').filter(item => item.id > 0)
+        // 渲染表单
+        mForm.render()
+        // 选择活动，重新选择房间号
+        mForm.on('select(round)', function (data) {
+            const el = document.querySelector('#room_num')
+            el.value = 0
+            if (data.value != '') {
+                let info = roundInfo.find(item => item.id == data.value)
+                el.setAttribute('max', info.room_num - 1)
+            } else {
+                el.setAttribute('max', 0)
+            }
+            mForm.render()
+        })
+        mForm.submit('submit', (data, ret) => {
+            let index = parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
+            if (data.length > 0) {
+                const tbody = data.map((item, index) => {
+                    return `<tr>
+                                <td class="text-center">${index + 1}</td>
+                                <td class="text-center">${item.win_level_title}</td>
+                                <td class="text-center">${item.type_title}</td>
+                                <td>${item.title}</td>
+                                <td class="text-center"><img class="img-sm img-center" src="${item.img}" alt="image" lay-on="img-preview" /></td>
+                            </tr>`
+                }).join('')
+                const content = `<table class="layui-table" lay-even>
+                                    <colgroup><col width="30"><col width="90"><col width="90"><col><col width="90"></colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th><div class="text-center">序</div></th>
+                                            <th><div class="text-center">中奖等级</div></th>
+                                            <th><div class="text-center">奖品类型</div></th>
+                                            <th><div class="text-center">奖品名称</div></th>
+                                            <th><div class="text-center">奖品图片</div></th>
+                                        </tr> 
+                                    </thead>
+                                    <tbody>${tbody}</tbody>
+                                </table>`
+                parent.layer.open({
+                    type: 1,
+                    title: '中奖奖品',
+                    area: '680px',
+                    content: '<div style="margin: 0 10px 20px 10px; max-height: 560px;">' + content + '</div>',
+                    btn: ['确认'],
+                });
+            } else {
+                // 关闭弹层
+                parent.layer.alert('抱歉！未中奖', { title: 'Tips' });
+            }
+
+            return false
+        })
+    })
+</script>
+<?php $this->blockEnd(); ?>
